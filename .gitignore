@@ -5,7 +5,7 @@ target/
 jre/
 双击run.bat运行.txt/
 .idea/
-
+*jar
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
