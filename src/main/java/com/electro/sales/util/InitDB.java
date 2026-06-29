@@ -1,8 +1,7 @@
 package com.electro.sales.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,129 +11,139 @@ public class InitDB {
 
     public static void init() {
         Connection conn = null;
+
         try {
             conn = DBUtil.getConnection();
+
             if (conn == null) {
                 System.err.println("数据库连接为空，无法初始化");
                 return;
             }
 
-            // 检查 user 表是否已存在（用 SQL 查询更可靠）
-            if (isTableExists(conn)) {
-                System.out.println("数据库已初始化，跳过");
+            // 如果 user 表已存在，认为数据库已初始化
+            if (isTableExists(conn, "user")) {
+                System.out.println("数据库表已存在，跳过 install.sql 初始化");
                 return;
             }
 
-            // 查找 install.sql
-            File sqlFile = new File("install.sql");
-            if (!sqlFile.exists()) {
-                System.out.println("未找到 install.sql，使用内置建表语句");
-                createTablesWithBuiltInSql(conn);
+            InputStream in = findInstallSql();
+
+            if (in == null) {
+                System.err.println("未找到 install.sql，无法初始化数据库表");
                 return;
             }
 
-            // 从文件读取并执行
-            try (Statement stmt = conn.createStatement();
-                 BufferedReader br = new BufferedReader(new FileReader(sqlFile))) {
+            executeSqlFile(conn, in);
 
-                StringBuilder sql = new StringBuilder();
-                String line;
-
-                while ((line = br.readLine()) != null) {
-                    sql.append(line).append("\n");
-
-                    if (line.trim().endsWith(";")) {
-                        stmt.execute(sql.toString());
-                        sql.setLength(0);
-                    }
-                }
-
-                System.out.println("数据库初始化完成");
-            }
+            System.out.println("数据库表初始化完成");
 
         } catch (Exception e) {
             System.err.println("数据库初始化失败：" + e.getMessage());
             e.printStackTrace();
+
         } finally {
             try {
-                if (conn != null) conn.close();
+                if (conn != null) {
+                    conn.close();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    // 用 SQL 查询判断表是否存在
-    private static boolean isTableExists(Connection conn) {
-        String sql = "SELECT COUNT(*) FROM information_schema.tables " +
-                "WHERE table_schema = DATABASE() AND table_name = 'user'";
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-        } catch (Exception e) {
-            System.err.println("检查表存在失败：" + e.getMessage());
+    // ================= 查找 install.sql =================
+    private static InputStream findInstallSql() throws Exception {
+        // 1. 优先查找项目根目录
+        File file = new File("install.sql");
+
+        if (file.exists()) {
+            System.out.println("从项目根目录加载 install.sql：" + file.getAbsolutePath());
+            return new FileInputStream(file);
         }
-        return false;
+
+        // 2. 再从 classpath 查找
+        InputStream in = InitDB.class.getClassLoader().getResourceAsStream("install.sql");
+
+        if (in != null) {
+            System.out.println("从 classpath 加载 install.sql");
+            return in;
+        }
+
+        return null;
     }
 
-    private static void createTablesWithBuiltInSql(Connection conn) {
-        try (Statement stmt = conn.createStatement()) {
-            // 用户表
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `user` (" +
-                    "`id` int NOT NULL AUTO_INCREMENT, " +
-                    "`username` varchar(50) NOT NULL, " +
-                    "`password` varchar(50) NOT NULL, " +
-                    "`role` varchar(20) NOT NULL DEFAULT 'user', " +
-                    "PRIMARY KEY (`id`), " +
-                    "UNIQUE KEY `uk_username` (`username`)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // ================= 执行 SQL 文件 =================
+    private static void executeSqlFile(Connection conn, InputStream in) throws Exception {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+             Statement stmt = conn.createStatement()) {
 
-            // 插入管理员
-            stmt.executeUpdate("INSERT IGNORE INTO `user` (`username`, `password`, `role`) VALUES ('admin', '123456', 'admin')");
+            StringBuilder sql = new StringBuilder();
+            String line;
 
-            // 电影表
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `movie` (" +
-                    "`id` int NOT NULL AUTO_INCREMENT, " +
-                    "`name` varchar(100) NOT NULL, " +
-                    "`duration` int NOT NULL, " +
-                    "`price` decimal(10,2) NOT NULL, " +
-                    "`type` varchar(50) DEFAULT NULL, " +
-                    "PRIMARY KEY (`id`)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            while ((line = br.readLine()) != null) {
+                String trimLine = line.trim();
 
-            // 场次表
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `showtime` (" +
-                    "`id` int NOT NULL AUTO_INCREMENT, " +
-                    "`movie_id` int NOT NULL, " +
-                    "`hall` varchar(20) NOT NULL, " +
-                    "`show_time` datetime NOT NULL, " +
-                    "PRIMARY KEY (`id`), " +
-                    "KEY `movie_id` (`movie_id`), " +
-                    "CONSTRAINT `showtime_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`id`)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                // 跳过空行
+                if (trimLine.isEmpty()) {
+                    continue;
+                }
 
-            // 订单表
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `ticket_order` (" +
-                    "`id` int NOT NULL AUTO_INCREMENT, " +
-                    "`user_id` int NOT NULL, " +
-                    "`showtime_id` int NOT NULL, " +
-                    "`seat` varchar(20) NOT NULL, " +
-                    "`total_price` decimal(10,2) NOT NULL, " +
-                    "`status` varchar(20) NOT NULL DEFAULT '待支付', " +
-                    "`create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-                    "PRIMARY KEY (`id`), " +
-                    "KEY `user_id` (`user_id`), " +
-                    "KEY `showtime_id` (`showtime_id`), " +
-                    "CONSTRAINT `ticket_order_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`), " +
-                    "CONSTRAINT `ticket_order_ibfk_2` FOREIGN KEY (`showtime_id`) REFERENCES `showtime` (`id`)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                // 跳过单行注释
+                if (trimLine.startsWith("--")) {
+                    continue;
+                }
 
-            System.out.println("数据库初始化完成（内置SQL）");
-        } catch (Exception e) {
-            System.err.println("建表失败：" + e.getMessage());
-            e.printStackTrace();
+                // 跳过 MySQL 注释
+                if (trimLine.startsWith("#")) {
+                    continue;
+                }
+
+                sql.append(line).append("\n");
+
+                // 遇到分号执行
+                if (trimLine.endsWith(";")) {
+                    String realSql = sql.toString();
+
+                    // 去掉最后的分号
+                    realSql = realSql.substring(0, realSql.lastIndexOf(";")).trim();
+
+                    if (!realSql.isEmpty()) {
+                        System.out.println("执行SQL：\n" + realSql);
+                        stmt.execute(realSql);
+                    }
+
+                    sql.setLength(0);
+                }
+            }
+
+            // 防止最后一条 SQL 没有分号
+            String lastSql = sql.toString().trim();
+            if (!lastSql.isEmpty()) {
+                System.out.println("执行SQL：\n" + lastSql);
+                stmt.execute(lastSql);
+            }
         }
+    }
+
+    // ================= 判断表是否存在 =================
+    private static boolean isTableExists(Connection conn, String tableName) {
+        String sql = "SELECT COUNT(*) FROM information_schema.tables " +
+                "WHERE table_schema = DATABASE() AND table_name = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("检查表是否存在失败：" + e.getMessage());
+        }
+
+        return false;
     }
 }

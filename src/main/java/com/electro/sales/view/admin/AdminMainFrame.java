@@ -1,6 +1,11 @@
-package com.electro.sales.view;
+package com.electro.sales.view.admin;
 
 import com.electro.sales.model.User;
+import com.electro.sales.view.MainFrame;
+import com.electro.sales.view.MovieFrame;
+import com.electro.sales.view.ShowtimeFrame;
+import com.electro.sales.view.ShowtimeSeatFrame;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,9 +33,11 @@ public class AdminMainFrame extends JFrame {
 
         JMenu showMenu = new JMenu("场次管理");
         JMenuItem showList = new JMenuItem("场次列表");
+        JMenuItem seatStatus = new JMenuItem("座位状态");
         JMenuItem addShow = new JMenuItem("新增场次");
 
         showMenu.add(showList);
+        showMenu.add(seatStatus);
         showMenu.add(addShow);
 
         JMenu orderMenu = new JMenu("订单管理");
@@ -77,6 +84,8 @@ public class AdminMainFrame extends JFrame {
         addShow.addActionListener(e -> new AddShowtimeFrame().setVisible(true));
 
         orderList.addActionListener(e -> new OrderAdminFrame().setVisible(true));
+
+        seatStatus.addActionListener(e -> new ShowtimeSeatFrame().setVisible(true));
 
         logout.addActionListener(e -> {
             int res = JOptionPane.showConfirmDialog(

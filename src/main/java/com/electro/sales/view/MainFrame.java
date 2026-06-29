@@ -1,7 +1,10 @@
 package com.electro.sales.view;
 
-import com.electro.sales.dao.UserDao;
 import com.electro.sales.model.User;
+import com.electro.sales.service.UserService;
+import com.electro.sales.view.admin.AdminMainFrame;
+import com.electro.sales.view.user.UserMainFrame;
+import com.electro.sales.view.user.RegisterFrame;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +14,7 @@ public class MainFrame extends JFrame {
     private final JTextField usernameField = new JTextField();
     private final JPasswordField passwordField = new JPasswordField();
 
-    private final UserDao userDao = new UserDao();
+    private final UserService userService = new UserService();
 
     public MainFrame() {
 
@@ -24,6 +27,7 @@ public class MainFrame extends JFrame {
 
         // ================= 表单区 =================
         JPanel form = new JPanel(new GridLayout(2, 2, 5, 5));
+        form.setBorder(BorderFactory.createEmptyBorder(20, 30, 10, 30));
 
         form.add(new JLabel("用户名："));
         form.add(usernameField);
@@ -45,7 +49,6 @@ public class MainFrame extends JFrame {
         add(btnPanel, BorderLayout.SOUTH);
 
         // ================= 事件 =================
-
         loginBtn.addActionListener(e -> login());
 
         registerBtn.addActionListener(e ->
@@ -56,10 +59,20 @@ public class MainFrame extends JFrame {
     // ================= 登录逻辑 =================
     private void login() {
 
-        String username = usernameField.getText();
-        String password = new String(passwordField.getPassword());
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword()).trim();
 
-        User user = userDao.login(username, password);
+        if (username.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "请输入用户名");
+            return;
+        }
+
+        if (password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "请输入密码");
+            return;
+        }
+
+        User user = userService.login(username, password);
 
         if (user == null) {
             JOptionPane.showMessageDialog(this, "用户名或密码错误");

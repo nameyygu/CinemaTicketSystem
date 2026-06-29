@@ -1,22 +1,17 @@
 package com.electro.sales.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class Order {
+public class ShowtimeSeat {
     private int id;
-    private String Order_no;
-    private int user_id;
     private int showtime_id;
     private String seat;
-    private BigDecimal total_price;
-    private Integer status;
-    private LocalDateTime expire_time;
-    private LocalDateTime pay_time;
+    private int status;
+    private Integer order_id;
+    private LocalDateTime lock_time;
     private int version;
     private LocalDateTime create_time;
     private LocalDateTime update_time;
-
 
     public int getId() {
         return id;
@@ -24,20 +19,6 @@ public class Order {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public String getOrder_no() {
-        return Order_no;
-    }
-
-    public void setOrder_no(String Order_no) {}
-
-    public int getUser_id() {
-        return user_id;
-    }
-
-    public void setUser_id(int user_id) {
-        this.user_id = user_id;
     }
 
     public int getShowtime_id() {
@@ -56,36 +37,28 @@ public class Order {
         this.seat = seat;
     }
 
-    public BigDecimal getTotal_price() {
-        return total_price;
-    }
-
-    public void setTotal_price(BigDecimal total_price) {
-        this.total_price = total_price;
-    }
-
-    public Integer getStatus() {
+    public int getStatus() {
         return status;
     }
 
-    public void setStatus(Integer status) {
+    public void setStatus(int status) {
         this.status = status;
     }
 
-    public LocalDateTime getExpire_time() {
-        return expire_time;
+    public Integer getOrder_id() {
+        return order_id;
     }
 
-    public void setExpire_time(LocalDateTime expire_time) {
-        this.expire_time = expire_time;
+    public void setOrder_id(Integer order_id) {
+        this.order_id = order_id;
     }
 
-    public LocalDateTime getPay_time() {
-        return pay_time;
+    public LocalDateTime getLock_time() {
+        return lock_time;
     }
 
-    public void setPay_time(LocalDateTime pay_time) {
-        this.pay_time = pay_time;
+    public void setLock_time(LocalDateTime lock_time) {
+        this.lock_time = lock_time;
     }
 
     public int getVersion() {
