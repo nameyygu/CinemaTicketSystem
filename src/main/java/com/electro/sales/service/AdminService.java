@@ -67,9 +67,20 @@ public class AdminService {
             return false;
         }
 
+        if (movie.getName() == null || movie.getName().trim().isEmpty()) {
+            return false;
+        }
+
+        if (movie.getDuration() <= 0) {
+            return false;
+        }
+
+        if (movie.getPrice() == null) {
+            return false;
+        }
+
         return movieDao.update(movie);
     }
-
     // ================= 下架电影 =================
     public boolean offlineMovie(int movieId, int version) {
         if (movieId <= 0) {
@@ -197,12 +208,29 @@ public class AdminService {
             return false;
         }
 
+        if (showtime.getMovie_id() <= 0) {
+            return false;
+        }
+
+        if (showtime.getHall() == null || showtime.getHall().trim().isEmpty()) {
+            return false;
+        }
+
+        if (showtime.getShow_time() == null) {
+            return false;
+        }
+
+        if (showtime.getPrice() == null) {
+            return false;
+        }
+
         try {
             return showtimeDao.update(showtime);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     // ================= 取消场次，软删除 =================
     public boolean cancelShowtime(int showtimeId, int version) {

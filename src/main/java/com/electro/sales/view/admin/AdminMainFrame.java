@@ -27,18 +27,22 @@ public class AdminMainFrame extends JFrame {
         JMenu movieMenu = new JMenu("电影管理");
         JMenuItem movieList = new JMenuItem("电影列表");
         JMenuItem addMovie = new JMenuItem("新增电影");
+        JMenuItem updateMovie = new JMenuItem("修改电影");
 
         movieMenu.add(movieList);
         movieMenu.add(addMovie);
+        movieMenu.add(updateMovie);
 
         JMenu showMenu = new JMenu("场次管理");
         JMenuItem showList = new JMenuItem("场次列表");
         JMenuItem seatStatus = new JMenuItem("座位状态");
         JMenuItem addShow = new JMenuItem("新增场次");
+        JMenuItem updateShow = new JMenuItem("修改场次");
 
         showMenu.add(showList);
         showMenu.add(seatStatus);
         showMenu.add(addShow);
+        showMenu.add(updateShow);
 
         JMenu orderMenu = new JMenu("订单管理");
         JMenuItem orderList = new JMenuItem("所有订单");
@@ -86,6 +90,10 @@ public class AdminMainFrame extends JFrame {
         orderList.addActionListener(e -> new OrderAdminFrame().setVisible(true));
 
         seatStatus.addActionListener(e -> new ShowtimeSeatFrame().setVisible(true));
+
+        updateMovie.addActionListener(e -> new UpdateMovieFrame().setVisible(true));
+
+        updateShow.addActionListener(e -> new UpdateShowtimeFrame().setVisible(true));
 
         logout.addActionListener(e -> {
             int res = JOptionPane.showConfirmDialog(
